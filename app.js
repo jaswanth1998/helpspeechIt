@@ -113,11 +113,6 @@ messageForm.addEventListener('submit', async (e) => {
     const language = languageInput.value;
     const code = codeInput.value.trim();
     
-    if (!messageText || !language) {
-        showStatus('Please fill in all required fields.', true);
-        return;
-    }
-    
     try {
         // Add document to Firestore
         await addDoc(collection(db, 'msgs'), {
