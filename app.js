@@ -1,6 +1,6 @@
 // Import Firebase SDK
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, deleteDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -23,6 +23,188 @@ const messageForm = document.getElementById('messageForm');
 const statusDiv = document.getElementById('status');
 const messagesList = document.getElementById('messagesList');
 const deleteAllBtn = document.getElementById('deleteAllBtn');
+const interviewFeed = document.getElementById('interviewFeed');
+const deleteAllInterviewBtn = document.getElementById('deleteAllInterviewBtn');
+const statusCard = document.getElementById('statusCard');
+const statusIcon = document.getElementById('statusIcon');
+const statusText = document.getElementById('statusText');
+const micBtn = document.getElementById('micBtn');
+const sttStatusDiv = document.getElementById('sttStatus');
+
+// ===== ELEVENLABS SPEECH-TO-TEXT =====
+
+let sttSocket = null;
+let mediaStream = null;
+let audioContext = null;
+let processorNode = null;
+let isRecording = false;
+
+function setSttStatus(msg, className = '') {
+    sttStatusDiv.textContent = msg;
+    sttStatusDiv.className = 'stt-status' + (className ? ' ' + className : '');
+}
+
+function getElevenLabsKey() {
+    const key = localStorage.getItem('elevenLabsApiKey');
+    console.log('Retrieved ElevenLabs API key from localStorage:', key);
+    if (!key) {
+        const prompted = prompt('Enter your ElevenLabs API key (stored in localStorage):');
+        if (prompted) {
+            localStorage.setItem('elevenLabsApiKey', prompted.trim());
+            return prompted.trim();
+        }
+        return null;
+    }
+    return key;
+}
+
+async function startRecording() {
+    const apiKey = getElevenLabsKey();
+    if (!apiKey) {
+        setSttStatus('No API key provided.', 'stt-error');
+        return;
+    }
+
+    try {
+        // 1. Get a single-use token from ElevenLabs
+        setSttStatus('Authenticating…');
+        const tokenRes = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
+            method: 'POST',
+            headers: {
+                'xi-api-key': apiKey
+            }
+        });
+
+        if (!tokenRes.ok) {
+            const errBody = await tokenRes.text();
+            throw new Error(`Token request failed (${tokenRes.status}): ${errBody}`);
+        }
+
+        const tokenData = await tokenRes.json();
+        const token = tokenData.token;
+
+        // 2. Get microphone access
+        setSttStatus('Requesting microphone…');
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 }
+        });
+
+        // 3. Open WebSocket
+        const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=${encodeURIComponent(token)}&language_code=en&commit_strategy=vad&vad_silence_threshold_secs=1.5`;
+        sttSocket = new WebSocket(wsUrl);
+
+        sttSocket.onopen = () => {
+            isRecording = true;
+            micBtn.classList.add('recording');
+            setSttStatus('🔴 Listening… speak now', 'stt-active');
+            startAudioStreaming();
+        };
+
+        sttSocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const messageInput = document.getElementById('message');
+
+            if (data.message_type === 'partial_transcript' && data.text) {
+                // Show partial text as a hint
+                messageInput.setAttribute('data-partial', data.text);
+                setSttStatus('🔴 ' + data.text, 'stt-active');
+            } else if (data.message_type === 'committed_transcript' && data.text) {
+                // Append committed text to textarea
+                const current = messageInput.value;
+                messageInput.value = (current ? current + ' ' : '') + data.text;
+                messageInput.removeAttribute('data-partial');
+                setSttStatus('🔴 Listening…', 'stt-active');
+            }
+        };
+
+        sttSocket.onerror = (err) => {
+            console.error('STT WebSocket error:', err);
+            setSttStatus('Connection error. Try again.', 'stt-error');
+            stopRecording();
+        };
+
+        sttSocket.onclose = () => {
+            if (isRecording) {
+                setSttStatus('Session ended.');
+                stopRecording();
+            }
+        };
+
+    } catch (err) {
+        console.error('STT start error:', err);
+        setSttStatus(err.message || 'Failed to start recording.', 'stt-error');
+        stopRecording();
+    }
+}
+
+function startAudioStreaming() {
+    audioContext = new AudioContext({ sampleRate: 16000 });
+    const source = audioContext.createMediaStreamSource(mediaStream);
+
+    // ScriptProcessorNode to capture raw PCM (4096 buffer)
+    processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+    processorNode.onaudioprocess = (e) => {
+        if (!isRecording || !sttSocket || sttSocket.readyState !== WebSocket.OPEN) return;
+
+        const float32 = e.inputBuffer.getChannelData(0);
+        // Convert Float32 → Int16 PCM
+        const int16 = new Int16Array(float32.length);
+        for (let i = 0; i < float32.length; i++) {
+            const s = Math.max(-1, Math.min(1, float32[i]));
+            int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+
+        // Base64 encode
+        const bytes = new Uint8Array(int16.buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
+
+        sttSocket.send(JSON.stringify({
+            message_type: 'input_audio_chunk',
+            audio_base_64: base64
+        }));
+    };
+
+    source.connect(processorNode);
+    processorNode.connect(audioContext.destination);
+}
+
+function stopRecording() {
+    isRecording = false;
+    micBtn.classList.remove('recording');
+
+    if (processorNode) {
+        processorNode.disconnect();
+        processorNode = null;
+    }
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+    }
+    if (sttSocket && sttSocket.readyState === WebSocket.OPEN) {
+        sttSocket.close();
+    }
+    sttSocket = null;
+
+    if (!sttStatusDiv.classList.contains('stt-error')) {
+        setSttStatus('Stopped.');
+        setTimeout(() => setSttStatus(''), 2000);
+    }
+}
+
+// Toggle mic on click
+micBtn.addEventListener('click', () => {
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+});
 
 // Show status message
 function showStatus(message, isError = false) {
@@ -165,5 +347,129 @@ deleteAllBtn.addEventListener('click', async () => {
     }
 });
 
-// Load messages on page load
+// ===== INTERVIEW QUESTIONS (Right Panel) =====
+
+function formatInterviewTime(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        + '  ·  ' + date.toLocaleDateString();
+}
+
+function loadInterviewQuestions() {
+    const q = query(
+        collection(db, 'interviewQuestions'),
+        orderBy('timestamp', 'desc')
+    );
+
+    onSnapshot(q, (snapshot) => {
+        interviewFeed.innerHTML = '';
+
+        if (snapshot.empty) {
+            interviewFeed.innerHTML = '<div class="no-interview">Waiting for interview questions…</div>';
+            return;
+        }
+
+        let isFirst = true;
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const bubble = document.createElement('div');
+            bubble.className = 'interview-bubble' + (isFirst ? ' new' : '');
+            bubble.innerHTML = `
+                <div class="interview-question">${escapeHtml(data.question)}</div>
+                <div class="interview-time">${formatInterviewTime(data.timestamp)}</div>
+            `;
+            interviewFeed.appendChild(bubble);
+            isFirst = false;
+        });
+    }, (error) => {
+        console.error('Error loading interview questions:', error);
+        interviewFeed.innerHTML = '<div class="no-interview">Error loading interview feed. Please refresh.</div>';
+    });
+}
+
+// Delete all interview questions
+deleteAllInterviewBtn.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to delete ALL interview questions? This action cannot be undone!')) {
+        return;
+    }
+    
+    try {
+        deleteAllInterviewBtn.disabled = true;
+        deleteAllInterviewBtn.textContent = 'Deleting...';
+        
+        const q = query(collection(db, 'interviewQuestions'));
+        const snapshot = await getDocs(q);
+        
+        const deletePromises = [];
+        snapshot.forEach((document) => {
+            deletePromises.push(deleteDoc(doc(db, 'interviewQuestions', document.id)));
+        });
+        
+        await Promise.all(deletePromises);
+        
+        showStatus(`Successfully deleted ${deletePromises.length} interview question${deletePromises.length !== 1 ? 's' : ''}!`);
+        
+    } catch (error) {
+        console.error('Error deleting interview questions:', error);
+        showStatus('Error deleting questions. Please try again.', true);
+    } finally {
+        deleteAllInterviewBtn.disabled = false;
+        deleteAllInterviewBtn.textContent = 'Delete All Questions';
+    }
+});
+
+// ===== INTERVIEW STATUS (Right Panel Card) =====
+
+const STATUS_CONFIG = {
+    'okay': {
+        icon: '✅',
+        text: 'Going Smooth',
+        className: 'status-okay'
+    },
+    'not okay': {
+        icon: '⚠️',
+        text: 'Needs Attention',
+        className: 'status-notokay'
+    },
+    'sos': {
+        icon: '🚨',
+        text: 'SOS — Help Needed!',
+        className: 'status-sos'
+    }
+};
+
+function listenInterviewStatus() {
+    const docRef = doc(db, 'interviewStatus', 'info');
+
+    onSnapshot(docRef, (snap) => {
+        if (!snap.exists()) {
+            statusCard.className = 'status-card status-loading';
+            statusIcon.textContent = '❓';
+            statusText.textContent = 'No status available';
+            return;
+        }
+
+        const data = snap.data();
+        const value = (data.status || '').toLowerCase().trim();
+        const config = STATUS_CONFIG[value] || {
+            icon: '❓',
+            text: value || 'Unknown',
+            className: 'status-loading'
+        };
+
+        statusCard.className = 'status-card ' + config.className;
+        statusIcon.textContent = config.icon;
+        statusText.textContent = config.text;
+    }, (error) => {
+        console.error('Error listening to interview status:', error);
+        statusCard.className = 'status-card status-loading';
+        statusIcon.textContent = '❌';
+        statusText.textContent = 'Error loading status';
+    });
+}
+
+// Load messages & interview feed on page load
 loadMessages();
+loadInterviewQuestions();
+listenInterviewStatus();

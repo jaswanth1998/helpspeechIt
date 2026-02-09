@@ -7,53 +7,88 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Code Snippet Messenger</h1>
-        
-        <form id="messageForm">
-            <div class="form-group">
-                <label for="message">Message</label>
-                <textarea id="message" name="message" rows="5" placeholder="Enter your message..." required></textarea>
+    <div class="split-layout">
+        <!-- LEFT PANEL: Messages -->
+        <div class="panel panel-left">
+            <div class="panel-inner">
+                <h1>Code Snippet Messenger</h1>
+                
+                <form id="messageForm">
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <div class="textarea-with-mic">
+                            <textarea id="message" name="message" rows="4" placeholder="Enter your message..." required></textarea>
+                            <button type="button" id="micBtn" class="mic-btn" title="Hold to dictate with ElevenLabs STT">
+                                <span class="mic-icon">🎙️</span>
+                            </button>
+                        </div>
+                        <div id="sttStatus" class="stt-status"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="language">Programming Language</label>
+                        <select id="language" name="language">
+                            <option value="">Select a language</option>
+                            <option value="JavaScript">JavaScript</option>
+                            <option value="Python">Python</option>
+                            <option value="Java">Java</option>
+                            <option value="C++">C++</option>
+                            <option value="C#">C#</option>
+                            <option value="PHP">PHP</option>
+                            <option value="Ruby">Ruby</option>
+                            <option value="Go">Go</option>
+                            <option value="Rust">Rust</option>
+                            <option value="TypeScript">TypeScript</option>
+                            <option value="Swift">Swift</option>
+                            <option value="Kotlin">Kotlin</option>
+                            <option value="HTML/CSS">HTML/CSS</option>
+                            <option value="SQL">SQL</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="code">Code Snippet</label>
+                        <textarea id="code" name="code" rows="6" placeholder="Paste your code here..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Send Message</button>
+                </form>
+
+                <div id="status" class="status"></div>
+
+                <div class="messages-section">
+                    <div class="messages-header">
+                        <h2>Recent Code Submissions</h2>
+                        <button id="deleteAllBtn" class="btn-delete">Delete All Messages</button>
+                    </div>
+                    <div id="messagesList" class="messages-list"></div>
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="language">Programming Language</label>
-                <select id="language" name="language" required>
-                    <option value="">Select a language</option>
-                    <option value="JavaScript">JavaScript</option>
-                    <option value="Python">Python</option>
-                    <option value="Java">Java</option>
-                    <option value="C++">C++</option>
-                    <option value="C#">C#</option>
-                    <option value="PHP">PHP</option>
-                    <option value="Ruby">Ruby</option>
-                    <option value="Go">Go</option>
-                    <option value="Rust">Rust</option>
-                    <option value="TypeScript">TypeScript</option>
-                    <option value="Swift">Swift</option>
-                    <option value="Kotlin">Kotlin</option>
-                    <option value="HTML/CSS">HTML/CSS</option>
-                    <option value="SQL">SQL</option>
-                    <option value="Other">Other</option>
-                </select>
+        <!-- RIGHT PANEL: Interview Questions -->
+        <div class="panel panel-right">
+            <div class="panel-inner">
+                <div class="interview-header">
+                    <h1>🎤 Live Interview</h1>
+                    <span class="live-badge">● LIVE</span>
+                </div>
+
+                <!-- Interview Status Card -->
+                <div id="statusCard" class="status-card status-loading">
+                    <div class="status-icon" id="statusIcon">⏳</div>
+                    <div class="status-info">
+                        <div class="status-label">Interview Status</div>
+                        <div class="status-text" id="statusText">Loading…</div>
+                    </div>
+                </div>
+
+                <div class="interview-controls">
+                    <button id="deleteAllInterviewBtn" class="btn-delete-interview">Delete All Questions</button>
+                </div>
+                <div id="interviewFeed" class="interview-feed"></div>
             </div>
-
-            <div class="form-group">
-                <label for="code">Code Snippet</label>
-                <textarea id="code" name="code" rows="8" placeholder="Paste your code here..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-submit">Send Message</button>
-        </form>
-
-        <div id="status" class="status"></div>
-
-        <div class="messages-section">
-            <div class="messages-header">
-                <h2>Recent Code Submissions</h2>
-                <button id="deleteAllBtn" class="btn-delete">Delete All Messages</button>
-            </div>
-            <div id="messagesList" class="messages-list"></div>
         </div>
     </div>
 

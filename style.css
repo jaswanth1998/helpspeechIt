@@ -8,52 +8,140 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    padding: 20px;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 15px;
-    padding: 40px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+/* ===== SPLIT LAYOUT ===== */
+.split-layout {
+    display: flex;
+    min-height: 100vh;
 }
 
+.panel {
+    flex: 1;
+    overflow-y: auto;
+    height: 100vh;
+}
+
+.panel-inner {
+    padding: 30px;
+}
+
+/* --- Left Panel (Messages) --- */
+.panel-left {
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+}
+
+/* --- Right Panel (Interview) --- */
+.panel-right {
+    background: #0d1117;
+    color: #c9d1d9;
+}
+
+/* ===== HEADINGS ===== */
 h1 {
     color: #333;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     text-align: center;
-    font-size: 2.5rem;
+    font-size: 1.8rem;
+}
+
+.panel-right h1 {
+    color: #e6edf3;
+    font-size: 1.6rem;
 }
 
 h2 {
     color: #555;
-    margin-top: 40px;
-    margin-bottom: 20px;
-    font-size: 1.8rem;
+    margin-top: 30px;
+    margin-bottom: 16px;
+    font-size: 1.4rem;
 }
 
+/* ===== FORM ===== */
 .form-group {
-    margin-bottom: 25px;
+    margin-bottom: 18px;
 }
 
 label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: #555;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.95rem;
+}
+
+/* --- Mic Button --- */
+.textarea-with-mic {
+    position: relative;
+}
+
+.textarea-with-mic textarea {
+    padding-right: 52px;
+}
+
+.mic-btn {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.mic-btn:hover {
+    border-color: #667eea;
+    background: #f0f0ff;
+}
+
+.mic-btn.recording {
+    border-color: #da3633;
+    background: #fff0f0;
+    animation: micPulse 1s ease-in-out infinite;
+}
+
+@keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(218,54,51,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(218,54,51,0); }
+}
+
+.mic-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.stt-status {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    min-height: 1.2em;
+    color: #888;
+}
+
+.stt-status.stt-error {
+    color: #dc3545;
+}
+
+.stt-status.stt-active {
+    color: #da3633;
+    font-weight: 600;
 }
 
 input[type="text"],
 textarea,
 select {
     width: 100%;
-    padding: 12px 15px;
+    padding: 10px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-family: inherit;
     transition: border-color 0.3s ease;
 }
@@ -67,7 +155,7 @@ select:focus {
 
 textarea {
     resize: vertical;
-    min-height: 120px;
+    min-height: 80px;
     font-family: 'Courier New', Courier, monospace;
 }
 
@@ -77,12 +165,12 @@ textarea {
 
 .btn-submit {
     width: 100%;
-    padding: 15px;
+    padding: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -98,8 +186,8 @@ textarea {
 }
 
 .status {
-    margin-top: 20px;
-    padding: 15px;
+    margin-top: 15px;
+    padding: 12px;
     border-radius: 8px;
     text-align: center;
     font-weight: 600;
@@ -120,9 +208,10 @@ textarea {
     display: block;
 }
 
+/* ===== MESSAGES SECTION ===== */
 .messages-section {
-    margin-top: 40px;
-    padding-top: 30px;
+    margin-top: 30px;
+    padding-top: 20px;
     border-top: 2px solid #e0e0e0;
 }
 
@@ -130,9 +219,9 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 10px;
 }
 
 .messages-header h2 {
@@ -140,12 +229,12 @@ textarea {
 }
 
 .btn-delete {
-    padding: 10px 20px;
+    padding: 8px 16px;
     background: #dc3545;
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.2s ease;
@@ -163,12 +252,12 @@ textarea {
 .messages-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
 .message-item {
     background: #f8f9fa;
-    padding: 20px;
+    padding: 16px;
     border-radius: 10px;
     border-left: 4px solid #667eea;
     transition: transform 0.2s ease;
@@ -181,56 +270,252 @@ textarea {
 
 .message-content {
     color: #333;
-    font-size: 1.05rem;
-    margin-bottom: 10px;
+    font-size: 1rem;
+    margin-bottom: 8px;
     word-wrap: break-word;
 }
 
 .message-code {
     background: #2d2d2d;
     color: #f8f8f2;
-    padding: 15px;
+    padding: 12px;
     border-radius: 5px;
     font-family: 'Courier New', Courier, monospace;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     overflow-x: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
-    margin-top: 10px;
+    margin-top: 8px;
     line-height: 1.5;
 }
 
 .message-meta {
     display: flex;
-    gap: 20px;
+    gap: 15px;
     flex-wrap: wrap;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #666;
+    margin-top: 8px;
 }
 
 .message-meta span {
     background: white;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 5px;
 }
 
 .no-messages {
     text-align: center;
     color: #999;
-    padding: 40px;
+    padding: 30px;
     font-style: italic;
 }
 
-@media (max-width: 600px) {
-    .container {
-        padding: 20px;
+/* ===== INTERVIEW PANEL (RIGHT) ===== */
+.interview-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.interview-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 18px;
+}
+
+/* ===== INTERVIEW STATUS CARD ===== */
+.status-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    border: 1px solid #30363d;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.status-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.status-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    font-weight: 600;
+}
+
+.status-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* --- Okay --- */
+.status-okay {
+    background: rgba(35, 134, 54, 0.15);
+    border-color: #238636;
+}
+.status-okay .status-text {
+    color: #3fb950;
+}
+
+/* --- Not Okay --- */
+.status-notokay {
+    background: rgba(210, 153, 34, 0.15);
+    border-color: #d29922;
+}
+.status-notokay .status-text {
+    color: #e3b341;
+}
+
+/* --- SOS --- */
+.status-sos {
+    background: rgba(218, 54, 51, 0.2);
+    border-color: #da3633;
+    animation: sosPulse 1s ease-in-out infinite;
+}
+.status-sos .status-text {
+    color: #f85149;
+}
+
+@keyframes sosPulse {
+    0%, 100% { border-color: #da3633; box-shadow: 0 0 0 rgba(218,54,51,0); }
+    50% { border-color: #f85149; box-shadow: 0 0 20px rgba(218,54,51,0.3); }
+}
+
+/* --- Loading / Unknown --- */
+.status-loading {
+    background: rgba(139, 148, 158, 0.1);
+    border-color: #30363d;
+}
+.status-loading .status-text {
+    color: #8b949e;
+}
+
+.btn-delete-interview {
+    padding: 8px 16px;
+    background: #da3633;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-delete-interview:hover {
+    background: #b62324;
+    transform: translateY(-2px);
+}
+
+.btn-delete-interview:active {
+    transform: translateY(0);
+}
+
+.live-badge {
+    display: inline-block;
+    background: #da3633;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.interview-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.interview-bubble {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    animation: slideIn 0.35s ease-out;
+}
+
+.interview-bubble.new {
+    border-color: #58a6ff;
+    box-shadow: 0 0 12px rgba(88, 166, 255, 0.15);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.interview-question {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #e6edf3;
+    margin-bottom: 10px;
+}
+
+.interview-time {
+    font-size: 0.78rem;
+    color: #8b949e;
+    text-align: right;
+}
+
+.no-interview {
+    text-align: center;
+    color: #8b949e;
+    padding: 60px 20px;
+    font-style: italic;
+    font-size: 1rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    .split-layout {
+        flex-direction: column;
+    }
+
+    .panel {
+        height: auto;
+        min-height: auto;
+    }
+
+    .panel-left {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
     }
 
     h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 
     h2 {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
 }
